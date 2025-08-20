@@ -15,16 +15,39 @@ export const ResetPasswordScreen = ({ onComplete }: ResetPasswordScreenProps) =>
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionValid, setSessionValid] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check if we have a valid session for password reset
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        toast.error("Invalid or expired reset link. Please request a new password reset.");
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking session for password reset:', error);
+          toast.error("Error validating reset link. Please try requesting a new password reset.");
+          navigate("/");
+          return;
+        }
+        
+        console.log('Password reset session check:', session ? 'Valid session' : 'No session');
+        
+        if (!session) {
+          toast.error("Invalid or expired reset link. Please request a new password reset.");
+          navigate("/");
+          return;
+        }
+
+        setSessionValid(true);
+      } catch (err) {
+        console.error('Session check failed:', err);
+        toast.error("Error validating reset link. Please try requesting a new password reset.");
         navigate("/");
       }
-    });
+    };
+
+    checkSession();
   }, [navigate]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -43,27 +66,54 @@ export const ResetPasswordScreen = ({ onComplete }: ResetPasswordScreenProps) =>
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      console.log('Attempting to update user password');
+      
+      const { data, error } = await supabase.auth.updateUser({
         password: password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Password update error:', error);
+        throw error;
+      }
       
+      console.log('Password updated successfully:', data.user?.email);
       toast.success("Password updated successfully! You can now sign in with your new password.");
+      
+      // Sign out the user so they can sign in with new password
+      await supabase.auth.signOut();
       onComplete();
     } catch (error: any) {
       console.error("Password reset error:", error);
-      toast.error(error.message || "Failed to update password. Please try again.");
+      if (error.message?.includes('session_not_found') || error.message?.includes('invalid_token')) {
+        toast.error("Session expired. Please request a new password reset link.");
+        navigate("/");
+      } else {
+        toast.error(error.message || "Failed to update password. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  if (!sessionValid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+        <Card className="w-full max-w-md shadow-xl border-border/20">
+          <CardContent className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Validating reset link...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
       <Card className="w-full max-w-md shadow-xl border-border/20">
         <CardHeader className="text-center space-y-2">
-          <div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <div className="text-4xl font-bold text-primary pulse-glow">
             Math Battle
           </div>
           <CardTitle className="text-2xl">Set New Password</CardTitle>
@@ -108,9 +158,8 @@ export const ResetPasswordScreen = ({ onComplete }: ResetPasswordScreenProps) =>
             
             <Button 
               type="submit" 
-              className="w-full h-12 text-lg font-semibold"
+              className="w-full h-12 text-lg font-semibold btn-primary"
               disabled={loading}
-              variant="gradient"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Password

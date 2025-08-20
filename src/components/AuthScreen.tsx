@@ -25,12 +25,19 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
 
     try {
       if (isForgotPassword) {
+        const redirectUrl = `${window.location.origin}/reset-password`;
+        console.log('Sending password reset email with redirect:', redirectUrl);
+        
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`
+          redirectTo: redirectUrl
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Password reset error:', error);
+          throw error;
+        }
         
+        console.log('Password reset email sent successfully');
         toast.success("Password reset email sent! Check your inbox for instructions.");
         setIsForgotPassword(false);
       } else if (isSignUp) {
@@ -81,17 +88,30 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectTo = `${window.location.origin}/`;
+      console.log('Initiating Google OAuth with redirect:', redirectTo);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Google OAuth error:", error);
+        throw error;
+      }
+
+      console.log('Google OAuth initiated successfully:', data);
+      // Loading state will be cleared by the auth state change listener
     } catch (error: any) {
       console.error("Google auth error:", error);
-      toast.error("Failed to sign in with Google. Please try again.");
+      toast.error(`Failed to sign in with Google: ${error.message || 'Please try again.'}`);
       setLoading(false);
     }
   };
@@ -100,7 +120,7 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
       <Card className="w-full max-w-md shadow-xl border-border/20">
         <CardHeader className="text-center space-y-2">
-          <div className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <div className="text-4xl font-bold text-primary pulse-glow">
             Math Battle
           </div>
           <CardTitle className="text-2xl">
@@ -182,9 +202,8 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
             
             <Button 
               type="submit" 
-              className="w-full h-12 text-lg font-semibold"
+              className="w-full h-12 text-lg font-semibold btn-primary"
               disabled={loading}
-              variant="gradient"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isForgotPassword ? "Send Reset Email" : isSignUp ? "Create Account" : "Sign In"}
