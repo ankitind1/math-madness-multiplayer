@@ -21,6 +21,9 @@ const Index = () => {
   const [gameResult, setGameResult] = useState<any>(null);
   const [challengeCode, setChallengeCode] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('🎮 Index render - loading:', loading, 'user:', !!user, 'screen:', currentScreen);
+
   useEffect(() => {
     // Check for URL parameters on mount
     const challenge = getParam('challenge');
