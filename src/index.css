@@ -2,41 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Math Game Design System - Bright, playful, and energetic */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Background */
+    --background: 240 100% 99%;
+    --foreground: 230 15% 15%;
 
+    /* Game Colors */
+    --primary: 255 92% 65%;        /* Bright Purple */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 255 85% 75%;
+
+    --secondary: 213 94% 68%;      /* Bright Blue */
+    --secondary-foreground: 0 0% 100%;
+    --secondary-glow: 213 85% 80%;
+
+    --accent: 38 100% 67%;         /* Energetic Orange */
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 38 90% 75%;
+
+    /* Game States */
+    --success: 142 76% 36%;        /* Correct Answer Green */
+    --success-foreground: 0 0% 100%;
+    --success-glow: 142 70% 50%;
+
+    --destructive: 0 84% 60%;      /* Wrong Answer Red */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-glow: 0 80% 70%;
+
+    /* Interface */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 230 15% 15%;
+    --card-shadow: 230 25% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 230 15% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --muted: 240 20% 95%;
+    --muted-foreground: 230 10% 50%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --border: 240 20% 90%;
+    --input: 240 20% 96%;
+    --ring: 255 92% 65%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --radius: 1rem;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Game Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-glow)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
+    --gradient-game-bg: linear-gradient(135deg, hsl(240 100% 99%), hsl(255 100% 98%));
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.3);
+    --shadow-success: 0 0 30px hsl(var(--success) / 0.4);
+    --shadow-error: 0 0 30px hsl(var(--destructive) / 0.4);
+    --shadow-card: 0 10px 30px -10px hsl(var(--card-shadow) / 0.1);
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    /* Animations */
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +128,130 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    background: var(--gradient-game-bg);
+    min-height: 100vh;
   }
+}
+
+@layer components {
+  /* Game Button Variants */
+  .btn-game {
+    @apply relative overflow-hidden rounded-2xl font-bold text-lg px-8 py-4 transition-all duration-300 transform active:scale-95;
+    box-shadow: var(--shadow-card);
+  }
+
+  .btn-primary {
+    @apply btn-game text-primary-foreground;
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-glow), 0 15px 35px -10px hsl(var(--primary) / 0.4);
+  }
+
+  .btn-secondary {
+    @apply btn-game text-secondary-foreground;
+    background: var(--gradient-secondary);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 35px -10px hsl(var(--secondary) / 0.4);
+  }
+
+  .btn-success {
+    @apply btn-game text-success-foreground;
+    background: var(--gradient-success);
+    box-shadow: var(--shadow-success);
+  }
+
+  .btn-error {
+    @apply btn-game text-destructive-foreground;
+    background: linear-gradient(135deg, hsl(var(--destructive)), hsl(var(--destructive-glow)));
+    box-shadow: var(--shadow-error);
+  }
+
+  /* Game Cards */
+  .game-card {
+    @apply bg-card rounded-3xl p-6 border-0;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .game-card-glow {
+    @apply game-card;
+    box-shadow: var(--shadow-glow), var(--shadow-card);
+  }
+
+  /* Animation Classes */
+  .bounce-in {
+    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .pulse-glow {
+    animation: pulseGlow 2s infinite;
+  }
+
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .correct-answer {
+    animation: correctPulse 0.8s ease-out;
+  }
+
+  .wrong-answer {
+    animation: wrongShake 0.6s ease-out;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3) translateY(100px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(-10px);
+  }
+  70% {
+    transform: scale(0.9) translateY(0);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: var(--shadow-glow);
+  }
+  50% {
+    box-shadow: 0 0 60px hsl(var(--primary) / 0.5), var(--shadow-glow);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes correctPulse {
+  0% { transform: scale(1); }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: var(--shadow-success);
+  }
+  100% { transform: scale(1); }
+}
+
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-15px); box-shadow: var(--shadow-error); }
+  75% { transform: translateX(15px); box-shadow: var(--shadow-error); }
 }
