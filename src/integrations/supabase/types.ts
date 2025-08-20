@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          current_win_streak: number | null
+          display_name: string | null
+          fastest_answer_time: number | null
+          games_won: number | null
+          highest_score: number | null
+          id: string
+          longest_win_streak: number | null
+          total_correct_answers: number | null
+          total_games: number | null
+          total_questions_answered: number | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          current_win_streak?: number | null
+          display_name?: string | null
+          fastest_answer_time?: number | null
+          games_won?: number | null
+          highest_score?: number | null
+          id?: string
+          longest_win_streak?: number | null
+          total_correct_answers?: number | null
+          total_games?: number | null
+          total_questions_answered?: number | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          current_win_streak?: number | null
+          display_name?: string | null
+          fastest_answer_time?: number | null
+          games_won?: number | null
+          highest_score?: number | null
+          id?: string
+          longest_win_streak?: number | null
+          total_correct_answers?: number | null
+          total_games?: number | null
+          total_questions_answered?: number | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
