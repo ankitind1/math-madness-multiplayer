@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface AuthScreenProps {
   onAuthSuccess: () => void;
@@ -39,7 +40,7 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
 
         if (error) throw error;
         
-        toast.success("Check your email for the confirmation link!");
+        toast.success("Account created! Please check your email to confirm your account before signing in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -56,11 +57,31 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
       if (error.message?.includes("User already registered")) {
         toast.error("An account with this email already exists. Try signing in instead.");
       } else if (error.message?.includes("Invalid login credentials")) {
-        toast.error("Invalid email or password. Please try again.");
+        toast.error("Invalid email or password. Please check your credentials and ensure your email is confirmed.");
+      } else if (error.message?.includes("Email not confirmed")) {
+        toast.error("Please check your email and click the confirmation link before signing in.");
       } else {
         toast.error(error.message || "An error occurred during authentication");
       }
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Google auth error:", error);
+      toast.error("Failed to sign in with Google. Please try again.");
       setLoading(false);
     }
   };
@@ -143,6 +164,19 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
               {isSignUp ? "Create Account" : "Sign In"}
             </Button>
           </form>
+          
+          <div className="mt-4">
+            <Separator className="my-4" />
+            <Button 
+              onClick={handleGoogleAuth}
+              variant="outline"
+              className="w-full h-12 text-lg font-semibold"
+              disabled={loading}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Continue with Google
+            </Button>
+          </div>
           
           <div className="mt-6 text-center">
             <button
