@@ -13,6 +13,7 @@ interface AuthScreenProps {
 
 export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -23,7 +24,16 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`
+        });
+
+        if (error) throw error;
+        
+        toast.success("Password reset email sent! Check your inbox for instructions.");
+        setIsForgotPassword(false);
+      } else if (isSignUp) {
         const redirectUrl = `${window.location.origin}/`;
         
         const { error } = await supabase.auth.signUp({
@@ -94,19 +104,21 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
             Math Battle
           </div>
           <CardTitle className="text-2xl">
-            {isSignUp ? "Create Account" : "Welcome Back"}
+            {isForgotPassword ? "Reset Password" : isSignUp ? "Create Account" : "Welcome Back"}
           </CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? "Join the battle and compete with players worldwide!" 
-              : "Sign in to continue your math journey"
+            {isForgotPassword 
+              ? "Enter your email to receive password reset instructions" 
+              : isSignUp 
+                ? "Join the battle and compete with players worldwide!" 
+                : "Sign in to continue your math journey"
             }
           </CardDescription>
         </CardHeader>
         
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
+            {isSignUp && !isForgotPassword && (
               <div className="space-y-2">
                 <label htmlFor="username" className="text-sm font-medium">
                   Username
@@ -138,21 +150,35 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
               />
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-sm text-primary hover:text-primary/80 transition-colors"
+                      disabled={loading}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+              </div>
+            )}
             
             <Button 
               type="submit" 
@@ -161,7 +187,7 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
               variant="gradient"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSignUp ? "Create Account" : "Sign In"}
+              {isForgotPassword ? "Send Reset Email" : isSignUp ? "Create Account" : "Sign In"}
             </Button>
           </form>
           
@@ -181,13 +207,21 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                if (isForgotPassword) {
+                  setIsForgotPassword(false);
+                } else {
+                  setIsSignUp(!isSignUp);
+                }
+              }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               disabled={loading}
             >
-              {isSignUp 
-                ? "Already have an account? Sign in" 
-                : "Don't have an account? Sign up"
+              {isForgotPassword 
+                ? "Back to sign in" 
+                : isSignUp 
+                  ? "Already have an account? Sign in" 
+                  : "Don't have an account? Sign up"
               }
             </button>
           </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { GameCard } from "@/components/GameCard";
 import { GameButton } from "@/components/GameButton";
-import { ArrowLeft, Users, Copy, Share } from "lucide-react";
+import { ArrowLeft, Users, Copy, Share, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface MultiplayerScreenProps {
@@ -14,6 +14,7 @@ export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenPro
   const [selectedMode, setSelectedMode] = useState<"1v1" | "best-of-3" | "best-of-5" | "best-of-10">("1v1");
   const [isPrivate, setIsPrivate] = useState(false);
   const [inviteCode] = useState("MATH" + Math.random().toString(36).substr(2, 4).toUpperCase());
+  const challengeUrl = `${window.location.origin}/?challenge=${inviteCode}`;
 
   const handleQuickMatch = () => {
     onStartMatch({
@@ -42,15 +43,23 @@ export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenPro
     });
   };
 
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(challengeUrl);
+    toast({
+      title: "Copied!",
+      description: "Challenge link copied to clipboard"
+    });
+  };
+
   const shareInvite = () => {
     if (navigator.share) {
       navigator.share({
         title: 'Math Battle Challenge',
-        text: `Join my Math Battle game with code: ${inviteCode}`,
-        url: window.location.href
+        text: `Join my Math Battle game!`,
+        url: challengeUrl
       });
     } else {
-      copyInviteCode();
+      copyInviteLink();
     }
   };
 
@@ -136,6 +145,19 @@ export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenPro
               </div>
               <GameButton onClick={copyInviteCode} size="sm">
                 <Copy className="w-4 h-4" />
+              </GameButton>
+            </div>
+          </div>
+
+          {/* Challenge Link */}
+          <div className="bg-muted rounded-lg p-4 mb-4">
+            <div className="text-sm text-muted-foreground mb-2">Challenge Link</div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 text-sm bg-background rounded px-3 py-2 break-all">
+                {challengeUrl}
+              </div>
+              <GameButton onClick={copyInviteLink} size="sm">
+                <ExternalLink className="w-4 h-4" />
               </GameButton>
             </div>
           </div>
