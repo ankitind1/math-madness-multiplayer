@@ -2,20 +2,24 @@ import { useState, useEffect } from "react";
 import { GameCard } from "@/components/GameCard";
 import { GameButton } from "@/components/GameButton";
 import { Timer } from "@/components/Timer";
-import { MathProblem, GameState } from "@/types/game";
+import { MathProblem, GameState, RoundResult } from "@/types/game";
 import { generateGameProblems, calculateScore } from "@/utils/mathGenerator";
 import { useToast } from "@/hooks/use-toast";
 
 interface GameScreenProps {
-  onGameEnd: (result: any) => void;
+  onGameEnd: (result: RoundResult) => void;
   duration?: number;
   questionCount?: number;
+  seed?: string;
+  startTime?: number;
 }
 
-export const GameScreen = ({ 
-  onGameEnd, 
-  duration = 30, 
-  questionCount = 20 
+export const GameScreen = ({
+  onGameEnd,
+  duration = 30,
+  questionCount = 20,
+  seed,
+  startTime
 }: GameScreenProps) => {
   const { toast } = useToast();
   const [gameState, setGameState] = useState<GameState>({
@@ -29,17 +33,46 @@ export const GameScreen = ({
   });
 
   const [answerAnimation, setAnswerAnimation] = useState<string>("");
+  const [timeUntilStart, setTimeUntilStart] = useState<number>(0);
 
   useEffect(() => {
-    // Initialize game
-    const problems = generateGameProblems(questionCount);
+    // Initialize game with optional seeded randomness
+    const problems = generateGameProblems(questionCount, seed);
     setGameState(prev => ({
       ...prev,
-      problems,
-      isGameActive: true,
-      startTime: Date.now()
+      problems
     }));
-  }, [questionCount]);
+
+    const now = Date.now();
+    const delay = startTime ? Math.max(0, startTime - now) : 0;
+    if (delay === 0) {
+      setGameState(prev => ({
+        ...prev,
+        isGameActive: true,
+        startTime: Date.now()
+      }));
+      return;
+    }
+
+    setTimeUntilStart(delay);
+    const startTimer = setTimeout(() => {
+      setGameState(prev => ({
+        ...prev,
+        isGameActive: true,
+        startTime: Date.now()
+      }));
+      setTimeUntilStart(0);
+    }, delay);
+
+    const interval = setInterval(() => {
+      setTimeUntilStart(Math.max(0, (startTime || 0) - Date.now()));
+    }, 1000);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearInterval(interval);
+    };
+  }, [questionCount, seed, startTime]);
 
   const handleAnswer = (answer: boolean) => {
     if (!gameState.isGameActive || gameState.isGameFinished) return;
@@ -112,6 +145,16 @@ export const GameScreen = ({
           <p className="text-xl text-muted-foreground">
             Final Score: {gameState.score}
           </p>
+        </GameCard>
+      </div>
+    );
+  }
+
+  if (!gameState.isGameActive && timeUntilStart > 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <GameCard className="text-center">
+          <h2 className="text-3xl font-bold">Game starts in {Math.ceil(timeUntilStart / 1000)}</h2>
         </GameCard>
       </div>
     );

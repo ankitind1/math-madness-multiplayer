@@ -11,6 +11,7 @@ import { MultiplayerScreen } from "@/components/MultiplayerScreen";
 import { GameResult } from "@/components/GameResult";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import type { MatchSettings, RoundResult } from "@/types/game";
 
 type Screen = "menu" | "game" | "profile" | "leaderboard" | "multiplayer" | "result" | "reset-password";
 
@@ -18,36 +19,54 @@ const Index = () => {
   const { user, loading } = useAuth();
   const { getParam } = useUrlParams();
   const [currentScreen, setCurrentScreen] = useState<Screen>("menu");
-  const [gameResult, setGameResult] = useState<any>(null);
+  const [gameResult, setGameResult] = useState<RoundResult | null>(null);
   const [challengeCode, setChallengeCode] = useState<string | null>(null);
+  const [matchSettings, setMatchSettings] = useState<MatchSettings | null>(null);
 
   // Debug logging
   console.log('🎮 Index render - loading:', loading, 'user:', !!user, 'screen:', currentScreen);
 
+  const handleStartMatch = (settings: MatchSettings) => {
+    setMatchSettings(settings);
+    setCurrentScreen("game");
+  };
+
   useEffect(() => {
     // Check for URL parameters on mount
     const challenge = getParam('challenge');
+    const seed = getParam('seed');
+    const start = getParam('start');
     const resetPassword = getParam('type') === 'recovery';
-    
+
     if (challenge) {
       setChallengeCode(challenge);
       toast.success(`Challenge received! Code: ${challenge}`);
-      // Auto-navigate to multiplayer if user is authenticated
+      if (user && seed && start) {
+        handleStartMatch({
+          duration: 30,
+          questionCount: 20,
+          gameMode: '1v1',
+          isPrivate: true,
+          seed,
+          startTime: parseInt(start, 10)
+        });
+        return;
+      }
       if (user) {
         setCurrentScreen("multiplayer");
       }
     }
-    
+
     if (resetPassword) {
       setCurrentScreen("reset-password");
     }
   }, [getParam, user]);
 
   const handleStartGame = () => {
-    setCurrentScreen("game");
+    handleStartMatch({ duration: 30, questionCount: 20 });
   };
 
-  const handleGameEnd = (result: any) => {
+  const handleGameEnd = (result: RoundResult) => {
     setGameResult(result);
     setCurrentScreen("result");
   };
@@ -77,8 +96,10 @@ const Index = () => {
         return (
           <GameScreen
             onGameEnd={handleGameEnd}
-            duration={30}
-            questionCount={20}
+            duration={matchSettings?.duration ?? 30}
+            questionCount={matchSettings?.questionCount ?? 20}
+            seed={matchSettings?.seed}
+            startTime={matchSettings?.startTime}
           />
         );
       
@@ -100,7 +121,7 @@ const Index = () => {
         return (
           <MultiplayerScreen
             onBack={() => setCurrentScreen("menu")}
-            onStartMatch={handleStartGame}
+            onStartMatch={handleStartMatch}
           />
         );
       
