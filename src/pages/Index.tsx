@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUrlParams } from "@/hooks/useUrlParams";
 import { AuthScreen } from "@/components/AuthScreen";
@@ -8,25 +8,45 @@ import { GameScreen } from "@/components/GameScreen";
 import { ProfileScreen } from "@/components/ProfileScreen";
 import { LeaderboardScreen } from "@/components/LeaderboardScreen";
 import { MultiplayerScreen } from "@/components/MultiplayerScreen";
-import { GameResult } from "@/components/GameResult";
+import { MatchResult } from "@/components/MatchResult";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { MatchSettings, RoundResult } from "@/types/game";
 
-type Screen = "menu" | "game" | "profile" | "leaderboard" | "multiplayer" | "result" | "reset-password";
+type Screen = "menu" | "game" | "profile" | "leaderboard" | "multiplayer" | "match-result" | "reset-password";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const { getParam } = useUrlParams();
   const [currentScreen, setCurrentScreen] = useState<Screen>("menu");
-  const [gameResult, setGameResult] = useState<RoundResult | null>(null);
   const [challengeCode, setChallengeCode] = useState<string | null>(null);
   const [matchSettings, setMatchSettings] = useState<MatchSettings | null>(null);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [currentRound, setCurrentRound] = useState(0);
+  const [totalRounds, setTotalRounds] = useState(1);
+  const challengeToastShown = useRef(false);
 
-  const handleStartMatch = (settings: MatchSettings) => {
+  const getTotalRounds = useCallback((mode: MatchSettings["gameMode"] | undefined) => {
+    switch (mode) {
+      case "best-of-3":
+        return 3;
+      case "best-of-5":
+        return 5;
+      case "best-of-10":
+        return 10;
+      default:
+        return 1;
+    }
+  }, []);
+
+
+  const handleStartMatch = useCallback((settings: MatchSettings) => {
     setMatchSettings(settings);
+    setTotalRounds(getTotalRounds(settings.gameMode));
+    setRoundResults([]);
+    setCurrentRound(0);
     setCurrentScreen("game");
-  };
+  }, [getTotalRounds]);
 
   useEffect(() => {
     // Check for URL parameters on mount
@@ -35,7 +55,8 @@ const Index = () => {
     const start = getParam('start');
     const resetPassword = getParam('type') === 'recovery';
 
-    if (challenge) {
+    if (challenge && !challengeToastShown.current) {
+      challengeToastShown.current = true;
       setChallengeCode(challenge);
       toast.success(`Challenge received! Code: ${challenge}`);
       if (user && seed && start) {
@@ -57,24 +78,35 @@ const Index = () => {
     if (resetPassword) {
       setCurrentScreen("reset-password");
     }
-  }, [getParam, user]);
+  }, [getParam, user, handleStartMatch]);
 
   const handleStartGame = () => {
     handleStartMatch({ duration: 30, questionCount: 20 });
   };
 
   const handleGameEnd = (result: RoundResult) => {
-    setGameResult(result);
-    setCurrentScreen("result");
+    setRoundResults(prev => [...prev, result]);
+    if (currentRound + 1 < totalRounds) {
+      setCurrentRound(prev => prev + 1);
+      toast.success(`Round ${currentRound + 1} finished!`);
+      setTimeout(() => setCurrentScreen("game"), 1000);
+    } else {
+      setCurrentScreen("match-result");
+    }
   };
 
   const handlePlayAgain = () => {
-    setCurrentScreen("game");
+    if (matchSettings) {
+      handleStartMatch(matchSettings);
+    }
   };
 
   const handleMainMenu = () => {
     setCurrentScreen("menu");
-    setGameResult(null);
+    setRoundResults([]);
+    setCurrentRound(0);
+    setTotalRounds(1);
+    setMatchSettings(null);
   };
 
   const renderScreen = () => {
@@ -122,18 +154,14 @@ const Index = () => {
           />
         );
       
-      case "result":
-        return gameResult ? (
-          <GameResult
-            score={gameResult.score}
-            accuracy={gameResult.accuracy}
-            averageTime={gameResult.averageTime}
-            correctAnswers={gameResult.correctAnswers}
-            totalQuestions={20}
+      case "match-result":
+        return (
+          <MatchResult
+            rounds={roundResults}
             onPlayAgain={handlePlayAgain}
             onMainMenu={handleMainMenu}
           />
-        ) : null;
+        );
       
       case "reset-password":
         return (
