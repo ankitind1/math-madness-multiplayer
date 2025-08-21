@@ -38,10 +38,19 @@ export interface GameResult {
   totalQuestions: number;
 }
 
+export interface RoundResult {
+  score: number;
+  accuracy: number;
+  averageTime: number;
+  correctAnswers: number;
+}
+
 export interface MatchSettings {
   duration: number; // seconds
   questionCount: number;
   gameMode: "1v1" | "best-of-3" | "best-of-5" | "best-of-10";
   isPrivate: boolean;
   inviteCode?: string;
+  seed?: string;
+  startTime?: number;
 }

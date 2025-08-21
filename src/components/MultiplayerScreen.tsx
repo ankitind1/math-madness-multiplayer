@@ -12,16 +12,19 @@ interface MultiplayerScreenProps {
 export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenProps) => {
   const { toast } = useToast();
   const [selectedMode, setSelectedMode] = useState<"1v1" | "best-of-3" | "best-of-5" | "best-of-10">("1v1");
-  const [isPrivate, setIsPrivate] = useState(false);
   const [inviteCode] = useState("MATH" + Math.random().toString(36).substr(2, 4).toUpperCase());
-  const challengeUrl = `${window.location.origin}/?challenge=${inviteCode}`;
+  // Start time 30 seconds in the future to allow friends to join
+  const [startTime] = useState<number>(() => Date.now() + 30000);
+  const challengeUrl = `${window.location.origin}/?challenge=${inviteCode}&seed=${inviteCode}&start=${startTime}`;
 
   const handleQuickMatch = () => {
     onStartMatch({
       duration: 30,
       questionCount: 20,
       gameMode: selectedMode,
-      isPrivate: false
+      isPrivate: false,
+      seed: Math.random().toString(36).slice(2),
+      startTime: Date.now() + 3000
     });
   };
 
@@ -31,7 +34,9 @@ export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenPro
       questionCount: 20,
       gameMode: selectedMode,
       isPrivate: true,
-      inviteCode
+      inviteCode,
+      seed: inviteCode,
+      startTime
     });
   };
 
