@@ -39,6 +39,7 @@ const Index = () => {
     }
   }, []);
 
+
   const handleStartMatch = useCallback((settings: MatchSettings) => {
     setMatchSettings(settings);
     setTotalRounds(getTotalRounds(settings.gameMode));
