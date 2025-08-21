@@ -31,12 +31,10 @@ export const ResetPasswordScreen = ({ onComplete }: ResetPasswordScreenProps) =>
           return;
         }
         
-        console.log('Password reset session check:', session ? 'Valid session' : 'No session');
-        
-        if (!session) {
-          toast.error("Invalid or expired reset link. Please request a new password reset.");
-          navigate("/");
-          return;
+          if (!session) {
+            toast.error("Invalid or expired reset link. Please request a new password reset.");
+            navigate("/");
+            return;
         }
 
         setSessionValid(true);
@@ -65,36 +63,34 @@ export const ResetPasswordScreen = ({ onComplete }: ResetPasswordScreenProps) =>
 
     setLoading(true);
 
-    try {
-      console.log('Attempting to update user password');
-      
-      const { data, error } = await supabase.auth.updateUser({
-        password: password
-      });
+      try {
+        const { data, error } = await supabase.auth.updateUser({
+          password: password
+        });
 
       if (error) {
         console.error('Password update error:', error);
         throw error;
       }
       
-      console.log('Password updated successfully:', data.user?.email);
-      toast.success("Password updated successfully! You can now sign in with your new password.");
+        toast.success("Password updated successfully! You can now sign in with your new password.");
       
       // Sign out the user so they can sign in with new password
       await supabase.auth.signOut();
       onComplete();
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      if (error.message?.includes('session_not_found') || error.message?.includes('invalid_token')) {
-        toast.error("Session expired. Please request a new password reset link.");
-        navigate("/");
-      } else {
-        toast.error(error.message || "Failed to update password. Please try again.");
+      } catch (error) {
+        console.error("Password reset error:", error);
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes('session_not_found') || message.includes('invalid_token')) {
+          toast.error("Session expired. Please request a new password reset link.");
+          navigate("/");
+        } else {
+          toast.error(message || "Failed to update password. Please try again.");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   if (!sessionValid) {
     return (

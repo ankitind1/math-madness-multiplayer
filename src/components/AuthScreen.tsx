@@ -24,23 +24,21 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
     setLoading(true);
 
     try {
-      if (isForgotPassword) {
-        const redirectUrl = `${window.location.origin}/reset-password`;
-        console.log('Sending password reset email with redirect:', redirectUrl);
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: redirectUrl
-        });
+        if (isForgotPassword) {
+          const redirectUrl = `${window.location.origin}/reset-password`;
+
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl
+          });
 
         if (error) {
           console.error('Password reset error:', error);
           throw error;
         }
         
-        console.log('Password reset email sent successfully');
-        toast.success("Password reset email sent! Check your inbox for instructions.");
-        setIsForgotPassword(false);
-      } else if (isSignUp) {
+          toast.success("Password reset email sent! Check your inbox for instructions.");
+          setIsForgotPassword(false);
+        } else if (isSignUp) {
         const redirectUrl = `${window.location.origin}/`;
         
         const { error } = await supabase.auth.signUp({
@@ -68,17 +66,18 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
         
         onAuthSuccess();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Auth error:", error);
-      
-      if (error.message?.includes("User already registered")) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (message.includes("User already registered")) {
         toast.error("An account with this email already exists. Try signing in instead.");
-      } else if (error.message?.includes("Invalid login credentials")) {
+      } else if (message.includes("Invalid login credentials")) {
         toast.error("Invalid email or password. Please check your credentials and ensure your email is confirmed.");
-      } else if (error.message?.includes("Email not confirmed")) {
+      } else if (message.includes("Email not confirmed")) {
         toast.error("Please check your email and click the confirmation link before signing in.");
       } else {
-        toast.error(error.message || "An error occurred during authentication");
+        toast.error(message || "An error occurred during authentication");
       }
     } finally {
       setLoading(false);
@@ -86,11 +85,10 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
   };
 
   const handleGoogleAuth = async () => {
-    setLoading(true);
+      setLoading(true);
     try {
       const redirectTo = `${window.location.origin}/`;
-      console.log('Initiating Google OAuth with redirect:', redirectTo);
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -98,20 +96,19 @@ export const AuthScreen = ({ onAuthSuccess }: AuthScreenProps) => {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          }
-        }
+          },
+        },
       });
 
       if (error) {
         console.error("Google OAuth error:", error);
         throw error;
       }
-
-      console.log('Google OAuth initiated successfully:', data);
       // Loading state will be cleared by the auth state change listener
-    } catch (error: any) {
+    } catch (error) {
       console.error("Google auth error:", error);
-      toast.error(`Failed to sign in with Google: ${error.message || 'Please try again.'}`);
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Failed to sign in with Google: ${message || 'Please try again.'}`);
       setLoading(false);
     }
   };

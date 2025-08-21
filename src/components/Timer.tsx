@@ -16,6 +16,12 @@ export const Timer = ({ duration, onTimeUp, isActive, onTick }: TimerProps) => {
   }, [duration]);
 
   useEffect(() => {
+    if (isActive) {
+      setTimeLeft(duration);
+    }
+  }, [isActive, duration]);
+
+  useEffect(() => {
     if (!isActive) return;
 
     const interval = setInterval(() => {
