@@ -23,9 +23,6 @@ const Index = () => {
   const [challengeCode, setChallengeCode] = useState<string | null>(null);
   const [matchSettings, setMatchSettings] = useState<MatchSettings | null>(null);
 
-  // Debug logging
-  console.log('🎮 Index render - loading:', loading, 'user:', !!user, 'screen:', currentScreen);
-
   const handleStartMatch = (settings: MatchSettings) => {
     setMatchSettings(settings);
     setCurrentScreen("game");
