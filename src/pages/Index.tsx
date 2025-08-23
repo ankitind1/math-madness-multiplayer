@@ -81,7 +81,7 @@ const Index = () => {
   }, [getParam, user, handleStartMatch]);
 
   const handleStartGame = () => {
-    handleStartMatch({ duration: 30, questionCount: 20 });
+    handleStartMatch({ duration: 30, questionCount: 20, gameMode: "1v1", isPrivate: false });
   };
 
   const handleGameEnd = (result: RoundResult) => {
