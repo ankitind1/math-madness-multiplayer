@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { GameCard } from "@/components/GameCard";
 import { GameButton } from "@/components/GameButton";
-import { ArrowLeft, Users, Copy, Share, ExternalLink, UserCircle } from "lucide-react";
+import { ArrowLeft, Users, Copy, Share, ExternalLink, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLobby } from "@/hooks/useLobby";
 
 interface MultiplayerScreenProps {
   onBack: () => void;
   onStartMatch: (settings: any) => void;
+  onStartParty?: () => void;
 }
 
-export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenProps) => {
+export const MultiplayerScreen = ({ onBack, onStartMatch, onStartParty }: MultiplayerScreenProps) => {
   const { toast } = useToast();
   const [selectedMode, setSelectedMode] = useState<"1v1" | "best-of-3" | "best-of-5" | "best-of-10">("1v1");
   const [inviteCode] = useState("MATH" + Math.random().toString(36).substr(2, 4).toUpperCase());
@@ -114,8 +115,29 @@ export const MultiplayerScreen = ({ onBack, onStartMatch }: MultiplayerScreenPro
         </div>
       </GameCard>
 
+      {/* Party Mode */}
+      {onStartParty && (
+        <GameCard className="mb-6" glow>
+          <div className="text-center">
+            <QrCode className="w-12 h-12 text-accent mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">Party Mode</h3>
+            <p className="text-muted-foreground mb-6">
+              Host a game where guests can join without signing in
+            </p>
+            <GameButton
+              variant="primary"
+              size="lg"
+              onClick={onStartParty}
+              className="w-full"
+            >
+              🎉 Host Party (QR)
+            </GameButton>
+          </div>
+        </GameCard>
+      )}
+
       {/* Quick Match */}
-      <GameCard className="mb-6" glow>
+      <GameCard className="mb-6">
         <div className="text-center">
           <Users className="w-12 h-12 text-primary mx-auto mb-4" />
           <h3 className="text-xl font-bold mb-2">Quick Match</h3>

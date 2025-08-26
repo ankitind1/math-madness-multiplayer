@@ -26,6 +26,8 @@ const Index = () => {
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
   const [totalRounds, setTotalRounds] = useState(1);
+  const [isGuest, setIsGuest] = useState(false);
+  const [partyLobbyCode, setPartyLobbyCode] = useState<string | null>(null);
   const challengeToastShown = useRef(false);
 
   const getTotalRounds = useCallback((mode: MatchSettings["gameMode"] | undefined) => {
@@ -55,7 +57,24 @@ const Index = () => {
     const challenge = getParam('challenge');
     const seed = getParam('seed');
     const start = getParam('start');
+    const lobbyCode = getParam('lobby');
+    const guestParam = getParam('guest');
     const resetPassword = getParam('type') === 'recovery';
+
+    // Handle party lobby join with guest option
+    if (lobbyCode && guestParam === '1') {
+      setIsGuest(true);
+      setPartyLobbyCode(lobbyCode);
+      setCurrentScreen("party-lobby");
+      return;
+    }
+
+    // Handle authenticated party lobby join
+    if (lobbyCode && user) {
+      setPartyLobbyCode(lobbyCode);
+      setCurrentScreen("party-lobby");
+      return;
+    }
 
     if (challenge && !challengeToastShown.current) {
       challengeToastShown.current = true;
@@ -124,6 +143,18 @@ const Index = () => {
         );
       
       case "game":
+        // Use SurvivalGameScreen for survival mode or deterministic games
+        if (matchSettings?.seed && (matchSettings?.isSurvival || matchSettings?.gameMode === 'survival-30s')) {
+          return (
+            <SurvivalGameScreen
+              onGameEnd={handleGameEnd}
+              duration={matchSettings.duration ?? 30}
+              seed={matchSettings.seed}
+              startTime={matchSettings.startTime || Date.now()}
+              gameMode={matchSettings.gameMode === 'survival-30s' ? 'survival-30s' : 'classic'}
+            />
+          );
+        }
         return (
           <GameScreen
             onGameEnd={handleGameEnd}
@@ -152,6 +183,21 @@ const Index = () => {
         return (
           <MultiplayerScreen
             onBack={() => setCurrentScreen("menu")}
+            onStartMatch={handleStartMatch}
+            onStartParty={() => setCurrentScreen("party-lobby")}
+          />
+        );
+      
+      case "party-lobby":
+        return (
+          <PartyLobbyScreen
+            code={partyLobbyCode || undefined}
+            isGuest={isGuest}
+            onBack={() => {
+              setCurrentScreen(isGuest ? "menu" : "multiplayer");
+              setPartyLobbyCode(null);
+              setIsGuest(false);
+            }}
             onStartMatch={handleStartMatch}
           />
         );
@@ -186,8 +232,11 @@ const Index = () => {
     );
   }
 
-  // Show auth screen if not authenticated (unless it's a password reset)
-  if (!user && currentScreen !== "reset-password") {
+  // Allow guests to bypass auth for party mode
+  const requiresAuth = currentScreen !== "reset-password" && currentScreen !== "party-lobby";
+  
+  // Show auth screen if not authenticated and not a guest/reset screen
+  if (!user && requiresAuth && !isGuest) {
     return <AuthScreen onAuthSuccess={() => {
       setCurrentScreen("menu");
       // If there was a challenge code, show it and navigate to multiplayer
@@ -195,6 +244,13 @@ const Index = () => {
         setTimeout(() => {
           setCurrentScreen("multiplayer");
           toast.success(`Ready to accept challenge: ${challengeCode}`);
+        }, 1000);
+      }
+      // If there was a party lobby code, navigate to it
+      if (partyLobbyCode) {
+        setTimeout(() => {
+          setCurrentScreen("party-lobby");
+          toast.success(`Joining party: ${partyLobbyCode}`);
         }, 1000);
       }
     }} />;

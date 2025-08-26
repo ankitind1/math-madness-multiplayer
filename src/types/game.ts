@@ -48,9 +48,10 @@ export interface RoundResult {
 export interface MatchSettings {
   duration: number; // seconds
   questionCount: number;
-  gameMode: "1v1" | "best-of-3" | "best-of-5" | "best-of-10";
+  gameMode: "1v1" | "best-of-3" | "best-of-5" | "best-of-10" | "survival-30s" | "classic";
   isPrivate: boolean;
   inviteCode?: string;
   seed?: string;
   startTime?: number;
+  isSurvival?: boolean;
 }
