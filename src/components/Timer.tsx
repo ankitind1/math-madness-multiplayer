@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface TimerProps {
@@ -6,40 +6,71 @@ interface TimerProps {
   onTimeUp: () => void;
   isActive: boolean;
   onTick?: (timeLeft: number) => void;
+  startTime?: number; // epoch milliseconds for absolute timing
 }
 
-export const Timer = ({ duration, onTimeUp, isActive, onTick }: TimerProps) => {
+export const Timer = ({ duration, onTimeUp, isActive, onTick, startTime }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
+  const animationRef = useRef<number>();
+  const hasCalledTimeUp = useRef(false);
 
   useEffect(() => {
+    hasCalledTimeUp.current = false;
     setTimeLeft(duration);
   }, [duration]);
 
   useEffect(() => {
-    if (isActive) {
-      setTimeLeft(duration);
+    if (!isActive) {
+      hasCalledTimeUp.current = false;
+      return;
     }
-  }, [isActive, duration]);
 
-  useEffect(() => {
-    if (!isActive) return;
+    // If no startTime provided, use interval-based timer (fallback)
+    if (!startTime) {
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          const newTime = Math.max(0, prev - 1);
+          onTick?.(newTime);
+          
+          if (newTime <= 0 && !hasCalledTimeUp.current) {
+            hasCalledTimeUp.current = true;
+            clearInterval(interval);
+            onTimeUp();
+            return 0;
+          }
+          return newTime;
+        });
+      }, 1000);
 
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        const newTime = prev - 1;
-        onTick?.(newTime);
-        
-        if (newTime <= 0) {
-          clearInterval(interval);
-          onTimeUp();
-          return 0;
-        }
-        return newTime;
-      });
-    }, 1000);
+      return () => clearInterval(interval);
+    }
 
-    return () => clearInterval(interval);
-  }, [isActive, onTimeUp, onTick]);
+    // Absolute time-based countdown using requestAnimationFrame
+    const tick = () => {
+      const now = Date.now();
+      const elapsedMs = now - startTime;
+      const remaining = Math.max(0, duration - Math.floor(elapsedMs / 1000));
+      
+      setTimeLeft(remaining);
+      onTick?.(remaining);
+      
+      if (remaining <= 0 && !hasCalledTimeUp.current) {
+        hasCalledTimeUp.current = true;
+        onTimeUp();
+      } else if (remaining > 0) {
+        animationRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    // Start the animation loop
+    animationRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isActive, duration, startTime, onTimeUp, onTick]);
 
   const percentage = (timeLeft / duration) * 100;
   const isLow = timeLeft <= 10;

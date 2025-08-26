@@ -1,105 +1,90 @@
+import { useState, useEffect } from "react";
 import { GameCard } from "@/components/GameCard";
 import { GameButton } from "@/components/GameButton";
-import { ArrowLeft, Trophy, Medal, Crown } from "lucide-react";
-import { PlayerStats } from "@/types/game";
+import { ArrowLeft, Trophy, Medal, Award, Timer, Target, Zap } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface LeaderboardScreenProps {
   onBack: () => void;
 }
 
-export const LeaderboardScreen = ({ onBack }: LeaderboardScreenProps) => {
-  // Mock leaderboard data - will be replaced with real data from Supabase
-  const mockLeaderboard: (PlayerStats & { rank: number })[] = [
-    {
-      rank: 1,
-      id: "player1",
-      username: "SpeedMaster",
-      totalGames: 120,
-      gamesWon: 95,
-      highestScore: 20,
-      averageAccuracy: 95.8,
-      fastestAnswer: 0.5,
-      currentStreak: 12,
-      longestStreak: 18
-    },
-    {
-      rank: 2,
-      id: "player2", 
-      username: "MathWiz",
-      totalGames: 89,
-      gamesWon: 71,
-      highestScore: 19,
-      averageAccuracy: 92.3,
-      fastestAnswer: 0.7,
-      currentStreak: 5,
-      longestStreak: 15
-    },
-    {
-      rank: 3,
-      id: "player3",
-      username: "QuickThink",
-      totalGames: 76,
-      gamesWon: 58,
-      highestScore: 18,
-      averageAccuracy: 89.1,
-      fastestAnswer: 0.6,
-      currentStreak: 8,
-      longestStreak: 12
-    },
-    {
-      rank: 4,
-      id: "player4",
-      username: "CalcGuru",
-      totalGames: 65,
-      gamesWon: 48,
-      highestScore: 17,
-      averageAccuracy: 86.7,
-      fastestAnswer: 0.9,
-      currentStreak: 3,
-      longestStreak: 9
-    },
-    {
-      rank: 5,
-      id: "player5",
-      username: "NumberNinja",
-      totalGames: 54,
-      gamesWon: 38,
-      highestScore: 16,
-      averageAccuracy: 84.2,
-      fastestAnswer: 1.1,
-      currentStreak: 1,
-      longestStreak: 7
-    }
-  ];
+interface LeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  avatar_url?: string;
+  total_games: number;
+  games_won: number;
+  highest_score: number;
+  accuracy: number;
+  current_win_streak: number;
+  longest_win_streak: number;
+  fastest_answer_time?: number;
+  last_played: string;
+}
 
-  const getRankIcon = (rank: number) => {
+export const LeaderboardScreen = ({ onBack }: LeaderboardScreenProps) => {
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
+
+  const fetchLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard_stats')
+        .select('*')
+        .order('games_won', { ascending: false })
+        .order('highest_score', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      setLeaderboard(data || []);
+    } catch (error: any) {
+      console.error('Error fetching leaderboard:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load leaderboard",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMedalIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="w-6 h-6 text-yellow-500" />;
+        return <Trophy className="w-6 h-6 text-yellow-500" />;
       case 2:
         return <Medal className="w-6 h-6 text-gray-400" />;
       case 3:
-        return <Medal className="w-6 h-6 text-amber-600" />;
+        return <Award className="w-6 h-6 text-orange-600" />;
       default:
-        return <Trophy className="w-6 h-6 text-muted-foreground" />;
+        return <span className="w-6 h-6 flex items-center justify-center text-muted-foreground">{rank}</span>;
     }
   };
 
-  const getRankColor = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "text-yellow-500";
-      case 2:
-        return "text-gray-400";
-      case 3:
-        return "text-amber-600";
-      default:
-        return "text-muted-foreground";
-    }
+  const formatLastPlayed = (date: string) => {
+    const now = new Date();
+    const lastPlayed = new Date(date);
+    const diffMs = now.getTime() - lastPlayed.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffDays > 0) return `${diffDays}d ago`;
+    if (diffHours > 0) return `${diffHours}h ago`;
+    if (diffMinutes > 0) return `${diffMinutes}m ago`;
+    return 'Just now';
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4 pb-20">
       {/* Header */}
       <div className="flex items-center mb-8">
         <GameButton onClick={onBack} className="mr-4">
@@ -108,107 +93,95 @@ export const LeaderboardScreen = ({ onBack }: LeaderboardScreenProps) => {
         <h1 className="text-3xl font-bold">Leaderboard</h1>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <GameButton variant="primary" size="sm" className="flex-1">
-          Global
-        </GameButton>
-        <GameButton variant="secondary" size="sm" className="flex-1">
-          Friends
-        </GameButton>
-        <GameButton variant="secondary" size="sm" className="flex-1">
-          Weekly
-        </GameButton>
-      </div>
-
-      {/* Top 3 Podium */}
-      <GameCard className="mb-6" glow>
-        <div className="flex justify-center items-end gap-4 mb-4">
-          {/* 2nd Place */}
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-secondary rounded-full mx-auto mb-2 flex items-center justify-center">
-              <span className="text-lg font-bold text-secondary-foreground">
-                {mockLeaderboard[1].username.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <Medal className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-            <div className="font-bold">{mockLeaderboard[1].username}</div>
-            <div className="text-sm text-muted-foreground">{mockLeaderboard[1].highestScore} pts</div>
-          </div>
-
-          {/* 1st Place - Taller */}
-          <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-primary rounded-full mx-auto mb-2 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary-foreground">
-                {mockLeaderboard[0].username.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <Crown className="w-10 h-10 text-yellow-500 mx-auto mb-1" />
-            <div className="font-bold text-lg">{mockLeaderboard[0].username}</div>
-            <div className="text-sm text-muted-foreground">{mockLeaderboard[0].highestScore} pts</div>
-          </div>
-
-          {/* 3rd Place */}
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-accent rounded-full mx-auto mb-2 flex items-center justify-center">
-              <span className="text-lg font-bold text-accent-foreground">
-                {mockLeaderboard[2].username.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <Medal className="w-8 h-8 text-amber-600 mx-auto mb-1" />
-            <div className="font-bold">{mockLeaderboard[2].username}</div>
-            <div className="text-sm text-muted-foreground">{mockLeaderboard[2].highestScore} pts</div>
-          </div>
-        </div>
-      </GameCard>
-
-      {/* Full Leaderboard */}
-      <div className="space-y-3">
-        {mockLeaderboard.map((player) => (
-          <GameCard key={player.id} className="flex items-center gap-4">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-              player.rank <= 3 ? 'bg-gradient-primary' : 'bg-muted'
-            }`}>
-              {player.rank <= 3 ? (
-                getRankIcon(player.rank)
-              ) : (
-                <span className="font-bold text-muted-foreground">#{player.rank}</span>
-              )}
-            </div>
-            
-            <div className="flex-1">
-              <div className="font-bold">{player.username}</div>
-              <div className="text-sm text-muted-foreground">
-                {player.gamesWon}/{player.totalGames} wins • {player.averageAccuracy.toFixed(1)}% accuracy
-              </div>
-            </div>
-            
-            <div className="text-right">
-              <div className="text-lg font-bold text-primary">{player.highestScore}</div>
-              <div className="text-sm text-muted-foreground">best score</div>
+      {/* Leaderboard List */}
+      <div className="space-y-4">
+        {loading ? (
+          <GameCard>
+            <div className="text-center py-8">
+              <div className="animate-pulse">Loading leaderboard...</div>
             </div>
           </GameCard>
-        ))}
-      </div>
-
-      {/* Your Rank */}
-      <GameCard className="mt-6 border-2 border-primary/20">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-primary">
-            <span className="font-bold text-primary-foreground">#42</span>
-          </div>
-          <div className="flex-1">
-            <div className="font-bold">You (MathMaster)</div>
-            <div className="text-sm text-muted-foreground">
-              28/45 wins • 85.2% accuracy
+        ) : leaderboard.length === 0 ? (
+          <GameCard>
+            <div className="text-center py-8">
+              <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No players yet. Be the first!</p>
             </div>
-          </div>
-          <div className="text-right">
-            <div className="text-lg font-bold text-primary">18</div>
-            <div className="text-sm text-muted-foreground">best score</div>
-          </div>
-        </div>
-      </GameCard>
+          </GameCard>
+        ) : (
+          leaderboard.map((player, index) => (
+            <GameCard 
+              key={player.user_id}
+              className="hover:scale-[1.02] transition-transform"
+              glow={index < 3}
+            >
+              <div className="flex items-center gap-4">
+                {/* Rank */}
+                <div className="flex-shrink-0">
+                  {getMedalIcon(index + 1)}
+                </div>
+
+                {/* Avatar */}
+                {player.avatar_url && (
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={player.avatar_url} 
+                      alt={player.display_name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Player Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-lg truncate">
+                    {player.display_name || 'Player'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Last played: {formatLastPlayed(player.last_played)}
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex-shrink-0 text-right space-y-1">
+                  <div className="flex items-center gap-2 justify-end">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    <span className="font-bold">{player.games_won} wins</span>
+                  </div>
+                  <div className="flex items-center gap-2 justify-end text-sm text-muted-foreground">
+                    <Target className="w-3 h-3" />
+                    <span>{player.accuracy}% accuracy</span>
+                  </div>
+                  {player.current_win_streak > 0 && (
+                    <div className="flex items-center gap-2 justify-end text-sm text-accent">
+                      <Zap className="w-3 h-3" />
+                      <span>{player.current_win_streak} streak</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Stats */}
+              <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-sm text-muted-foreground">Games</div>
+                  <div className="font-bold">{player.total_games}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">High Score</div>
+                  <div className="font-bold">{player.highest_score}</div>
+                </div>
+                {player.fastest_answer_time && (
+                  <div>
+                    <div className="text-sm text-muted-foreground">Fastest</div>
+                    <div className="font-bold">{player.fastest_answer_time.toFixed(1)}s</div>
+                  </div>
+                )}
+              </div>
+            </GameCard>
+          ))
+        )}
+      </div>
     </div>
   );
 };

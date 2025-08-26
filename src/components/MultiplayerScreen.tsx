@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GameCard } from "@/components/GameCard";
 import { GameButton } from "@/components/GameButton";
-import { ArrowLeft, Users, Copy, Share, ExternalLink } from "lucide-react";
+import { ArrowLeft, Users, Copy, Share, ExternalLink, UserCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLobby } from "@/hooks/useLobby";
 
 interface MultiplayerScreenProps {
   onBack: () => void;

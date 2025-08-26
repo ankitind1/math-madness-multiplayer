@@ -19,21 +19,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Upsert profile on sign in
+        if (event === 'SIGNED_IN' && session?.user) {
+          const displayName = 
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            session.user.email?.split('@')[0] ||
+            'Player';
+            
+          const { error } = await supabase
+            .from('profiles')
+            .upsert({
+              user_id: session.user.id,
+              display_name: displayName,
+              avatar_url: session.user.user_metadata?.avatar_url,
+              username: session.user.user_metadata?.username || `Player_${session.user.id.substring(0, 8)}`
+            }, {
+              onConflict: 'user_id'
+            });
+            
+          if (error) {
+            console.error('Error upserting profile:', error);
+          }
+        }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('❌ Error getting session:', error);
       }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Upsert profile for existing session
+      if (session?.user) {
+        const displayName = 
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split('@')[0] ||
+          'Player';
+          
+        await supabase
+          .from('profiles')
+          .upsert({
+            user_id: session.user.id,
+            display_name: displayName,
+            avatar_url: session.user.user_metadata?.avatar_url,
+            username: session.user.user_metadata?.username || `Player_${session.user.id.substring(0, 8)}`
+          }, {
+            onConflict: 'user_id'
+          });
+      }
     });
 
     return () => {
