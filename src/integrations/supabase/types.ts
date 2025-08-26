@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      lobbies: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          owner_user_id: string
+          seed: string | null
+          settings: Json | null
+          start_time: number | null
+          status: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          owner_user_id: string
+          seed?: string | null
+          settings?: Json | null
+          start_time?: number | null
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          owner_user_id?: string
+          seed?: string | null
+          settings?: Json | null
+          start_time?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
+      lobby_participants: {
+        Row: {
+          joined_at: string | null
+          lobby_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string | null
+          lobby_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string | null
+          lobby_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lobby_participants_lobby_id_fkey"
+            columns: ["lobby_id"]
+            isOneToOne: false
+            referencedRelation: "lobbies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -70,7 +129,54 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_stats: {
+        Row: {
+          accuracy: number | null
+          avatar_url: string | null
+          current_win_streak: number | null
+          display_name: string | null
+          fastest_answer_time: number | null
+          games_won: number | null
+          highest_score: number | null
+          last_played: string | null
+          longest_win_streak: number | null
+          total_correct_answers: number | null
+          total_games: number | null
+          total_questions_answered: number | null
+          user_id: string | null
+        }
+        Insert: {
+          accuracy?: never
+          avatar_url?: string | null
+          current_win_streak?: number | null
+          display_name?: string | null
+          fastest_answer_time?: number | null
+          games_won?: number | null
+          highest_score?: number | null
+          last_played?: string | null
+          longest_win_streak?: number | null
+          total_correct_answers?: number | null
+          total_games?: number | null
+          total_questions_answered?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          accuracy?: never
+          avatar_url?: string | null
+          current_win_streak?: number | null
+          display_name?: string | null
+          fastest_answer_time?: number | null
+          games_won?: number | null
+          highest_score?: number | null
+          last_played?: string | null
+          longest_win_streak?: number | null
+          total_correct_answers?: number | null
+          total_games?: number | null
+          total_questions_answered?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_stats: {
