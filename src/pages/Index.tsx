@@ -5,15 +5,17 @@ import { AuthScreen } from "@/components/AuthScreen";
 import { ResetPasswordScreen } from "@/components/ResetPasswordScreen";
 import { MainMenu } from "@/components/MainMenu";
 import { GameScreen } from "@/components/GameScreen";
+import { SurvivalGameScreen } from "@/components/SurvivalGameScreen";
 import { ProfileScreen } from "@/components/ProfileScreen";
 import { LeaderboardScreen } from "@/components/LeaderboardScreen";
 import { MultiplayerScreen } from "@/components/MultiplayerScreen";
+import { PartyLobbyScreen } from "@/components/PartyLobbyScreen";
 import { MatchResult } from "@/components/MatchResult";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { MatchSettings, RoundResult } from "@/types/game";
 
-type Screen = "menu" | "game" | "profile" | "leaderboard" | "multiplayer" | "match-result" | "reset-password";
+type Screen = "menu" | "game" | "profile" | "leaderboard" | "multiplayer" | "party-lobby" | "match-result" | "reset-password";
 
 const Index = () => {
   const { user, loading } = useAuth();
