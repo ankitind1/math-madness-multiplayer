@@ -68,11 +68,13 @@ export const usePartyLobby = (): UsePartyLobbyReturn => {
 
   // Create a new party lobby
   const createPartyLobby = useCallback(async (): Promise<string | null> => {
+    console.log('Creating party lobby...');
     setIsLoading(true);
     setError(null);
     
     try {
       const newCode = generateCode();
+      console.log('Generated code:', newCode);
       const hostId = user?.id || `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       hostIdRef.current = hostId;
@@ -83,13 +85,16 @@ export const usePartyLobby = (): UsePartyLobbyReturn => {
       // Generate QR URL
       const baseUrl = window.location.origin;
       const qrLink = `${baseUrl}/?lobby=${newCode}&guest=1`;
+      console.log('Generated QR URL:', qrLink);
       setQrUrl(qrLink);
       
       // Join the channel immediately
       await setupChannel(newCode, hostId, true);
+      console.log('Channel setup complete, lobby created successfully');
       
       return newCode;
     } catch (err: any) {
+      console.error('Error creating party lobby:', err);
       setError(err.message);
       toast({
         title: "Error",
@@ -248,6 +253,7 @@ export const usePartyLobby = (): UsePartyLobbyReturn => {
     asHost: boolean,
     userData?: any
   ) => {
+    console.log('Setting up channel:', { code, userId, asHost });
     const channelName = `party:${code}`;
     const newChannel = supabase.channel(channelName, {
       config: {

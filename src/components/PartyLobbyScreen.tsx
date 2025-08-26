@@ -37,6 +37,17 @@ export const PartyLobbyScreen = ({ code, isGuest, onBack, onStartMatch }: PartyL
     isInLobby
   } = usePartyLobby();
 
+  // Debug logging
+  console.log('PartyLobbyScreen render:', {
+    lobbyCode,
+    isInLobby,
+    isHost,
+    qrUrl,
+    qrDataUrl,
+    showJoinForm,
+    participants: participants.length
+  });
+
   // Handle party start event
   useEffect(() => {
     const handlePartyStart = (event: CustomEvent) => {
@@ -59,7 +70,7 @@ export const PartyLobbyScreen = ({ code, isGuest, onBack, onStartMatch }: PartyL
     };
   }, [onStartMatch]);
 
-  // Auto-join if code provided
+  // Auto-join if code provided or auto-create if coming from multiplayer
   useEffect(() => {
     if (code && !isInLobby) {
       if (isGuest) {
@@ -67,12 +78,22 @@ export const PartyLobbyScreen = ({ code, isGuest, onBack, onStartMatch }: PartyL
       } else {
         joinAsUser(code);
       }
+    } else if (!code && !isGuest && !isInLobby) {
+      // Check if we should auto-create (when coming from multiplayer screen)
+      const shouldAutoCreate = sessionStorage.getItem('autoCreateParty');
+      if (shouldAutoCreate === 'true') {
+        console.log('Auto-creating party from multiplayer screen...');
+        sessionStorage.removeItem('autoCreateParty');
+        handleCreateParty();
+      }
     }
   }, [code, isGuest, isInLobby]);
 
   // Generate QR code
   useEffect(() => {
+    console.log('QR Generation effect - qrUrl:', qrUrl);
     if (qrUrl) {
+      console.log('Generating QR code for URL:', qrUrl);
       QRCode.toDataURL(qrUrl, {
         width: 300,
         margin: 2,
@@ -80,12 +101,20 @@ export const PartyLobbyScreen = ({ code, isGuest, onBack, onStartMatch }: PartyL
           dark: '#000000',
           light: '#FFFFFF'
         }
-      }).then(setQrDataUrl).catch(console.error);
+      }).then((dataUrl) => {
+        console.log('QR code generated successfully');
+        setQrDataUrl(dataUrl);
+      }).catch((err) => {
+        console.error('Error generating QR code:', err);
+      });
     }
   }, [qrUrl]);
 
   const handleCreateParty = async () => {
+    console.log('handleCreateParty called');
     const newCode = await createPartyLobby();
+    console.log('Party created with code:', newCode);
+    console.log('Current state - lobbyCode:', lobbyCode, 'isInLobby:', isInLobby, 'qrUrl:', qrUrl);
     if (newCode) {
       updateSettings({ allowGuests: true, gameMode: 'survival-30s' });
       toast({
@@ -318,21 +347,39 @@ export const PartyLobbyScreen = ({ code, isGuest, onBack, onStartMatch }: PartyL
       </div>
 
       {/* QR Code for host */}
-      {isHost && qrDataUrl && (
+      {isHost && (
         <GameCard className="mb-6" glow>
           <div className="text-center">
             <h3 className="text-xl font-bold mb-4">Scan to Join</h3>
-            <img src={qrDataUrl} alt="QR Code" className="mx-auto mb-4" />
-            <div className="flex gap-2">
-              <GameButton onClick={copyCode} size="sm" className="flex-1">
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Code
-              </GameButton>
-              <GameButton onClick={copyLink} size="sm" className="flex-1">
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Link
-              </GameButton>
-            </div>
+            {qrDataUrl ? (
+              <>
+                <img src={qrDataUrl} alt="QR Code" className="mx-auto mb-4" />
+                <div className="flex gap-2">
+                  <GameButton onClick={copyCode} size="sm" className="flex-1">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Code
+                  </GameButton>
+                  <GameButton onClick={copyLink} size="sm" className="flex-1">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Link
+                  </GameButton>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-[300px] h-[300px] mx-auto mb-4 bg-muted animate-pulse rounded flex items-center justify-center">
+                  <div className="text-muted-foreground">Generating QR Code...</div>
+                </div>
+                <div className="mb-4">
+                  <div className="text-2xl font-mono font-bold bg-muted p-4 rounded">
+                    {lobbyCode}
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Share this code with friends or wait for QR to load
+                </div>
+              </>
+            )}
           </div>
         </GameCard>
       )}

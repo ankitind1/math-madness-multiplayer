@@ -184,7 +184,11 @@ const Index = () => {
           <MultiplayerScreen
             onBack={() => setCurrentScreen("menu")}
             onStartMatch={handleStartMatch}
-            onStartParty={() => setCurrentScreen("party-lobby")}
+            onStartParty={() => {
+              setCurrentScreen("party-lobby");
+              // Set a flag to auto-create party
+              sessionStorage.setItem('autoCreateParty', 'true');
+            }}
           />
         );
       
